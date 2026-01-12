@@ -1,0 +1,139 @@
+@startuml ClassDiagram_ExpenseTracker_Core
+title Диаграмма классов подсистемы "Учет расходов" (до 20 сущностей)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+' ====== Enums / Value Objects ======
+enum PaymentMethod {
+  CASH
+  CARD
+  OTHER
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+class ExpenseFilter <<ValueObject>> {
+  -category: string
+  -dateFrom: date
+  -dateTo: date
+}
+
+class DateRange <<ValueObject>> {
+  -dateFrom: date
+  -dateTo: date
+}
+
+class Money <<ValueObject>> {
+  -amountCents: int
+  +isNonNegative(): boolean
+}
+
+' ====== Entities ======
+class User <<Entity>> {
+  -id: uuid
+  -keycloakId: string
+  -email: string
+  -role: UserRole
+}
+
+class Expense <<Entity>> {
+  -id: uuid
+  -userId: uuid
+  -amountCents: int
+  -category: string
+  -description: string
+  -paymentMethod: PaymentMethod
+  -date: date
+}
+
+' ====== Security / Principal ======
+class Principal <<DTO>> {
+  +subject: string
+  +roles: set<UserRole>
+}
+
+' ====== Services ======
+class AuthService <<Service>> {
+  +verifyJWT(token: string): Principal
+  +requireRole(p: Principal, role: UserRole): void
+}
+
+class ExpenseService <<Service>> {
+  +createExpense(p: Principal, amountCents: int, category: string, date: date, method: PaymentMethod, desc: string): Expense
+  +listMyExpenses(p: Principal, f: ExpenseFilter): list<Expense>
+  +updateMyExpense(p: Principal, expenseId: uuid, ...): Expense
+  +deleteMyExpense(p: Principal, expenseId: uuid): void
+}
+
+class UserService <<Service>> {
+  +listUsers(p: Principal): list<User>
+  +changeRole(p: Principal, userId: uuid, role: UserRole): User
+}
+
+class StatsService <<Service>> {
+  +getMySummary(p: Principal, range: DateRange): {totalCents:int, count:int}
+  +getGlobalSummary(p: Principal, range: DateRange): {totalCents:int, count:int}
+}
+
+' ====== Repositories / Infrastructure ======
+class ExpenseRepository <<Repository>> {
+  +insert(e: Expense): Expense
+  +findById(id: uuid): Expense?
+  +findByUserAndFilter(userId: uuid, f: ExpenseFilter): list<Expense>
+  +update(e: Expense): Expense
+  +delete(id: uuid): void
+}
+
+class UserRepository <<Repository>> {
+  +findById(id: uuid): User?
+  +findByKeycloakId(kcId: string): User?
+  +listAll(): list<User>
+  +update(u: User): User
+}
+
+class KeycloakClient <<Integration>> {
+  +getJWKS(): object
+  +updateUserRole(keycloakUserId: string, role: UserRole): void
+}
+
+class DbSession <<Infrastructure>> {
+  +begin(): void
+  +commit(): void
+  +rollback(): void
+  +close(): void
+}
+
+' ====== Relationships ======
+User "1" --> "*" Expense : owns
+Expense --> PaymentMethod
+User --> UserRole
+Expense ..> Money
+
+AuthService ..> KeycloakClient : verifies JWT
+ExpenseService ..> ExpenseRepository
+ExpenseService ..> UserRepository
+UserService ..> UserRepository
+UserService ..> KeycloakClient : sync roles
+StatsService ..> ExpenseRepository : aggregates
+
+ExpenseRepository ..> DbSession
+UserRepository ..> DbSession
+
+ExpenseService ..> ExpenseFilter
+StatsService ..> DateRange
+
+note bottom of Expense
+  Денежные значения хранятся в целых единицах (cents),
+  чтобы избежать ошибок округления.
+end note
+
+note right of AuthService
+  Аутентификация/авторизация через Keycloak (OIDC/JWT).
+  Роль Admin дает доступ к админским операциям.
+end note
+
+@enduml
