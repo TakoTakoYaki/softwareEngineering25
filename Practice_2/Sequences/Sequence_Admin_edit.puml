@@ -1,0 +1,47 @@
+@startuml Sequence_Admin_Изменение_роли
+
+title Сценарий: Администратор изменяет роль пользователя
+
+actor "Администратор" as Admin
+participant "Веб-интерфейс" as UI
+participant "Backend" as API
+participant "Сервис авторизации" as Auth
+participant "Сервис пользователей" as UserService
+participant "Keycloak" as KC
+database "PostgreSQL" as DB
+
+Admin -> UI: Нажимает "Изменить роль пользователя"
+activate UI
+
+UI -> API: PUT /api/users/{id}/role (JWT, новая роль)
+activate API
+
+API -> Auth: Проверка JWT и роли Admin
+activate Auth
+Auth -> KC: Проверка токена и ролей
+KC --> Auth: role = Admin
+deactivate Auth
+
+API -> UserService: Обновить роль пользователя
+activate UserService
+
+UserService -> KC: Обновить роль пользователя в Keycloak
+activate KC
+KC --> UserService: OK
+deactivate KC
+
+UserService -> DB: Обновить роль пользователя
+activate DB
+DB --> UserService: OK
+deactivate DB
+
+UserService --> API: Роль обновлена
+deactivate UserService
+
+API --> UI: HTTP 200 OK
+deactivate API
+
+UI --> Admin: Уведомление "Роль изменена"
+deactivate UI
+
+@enduml
