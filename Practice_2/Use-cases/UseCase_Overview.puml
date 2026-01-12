@@ -1,0 +1,62 @@
+@startuml UseCase_ExpenseTracker_Overview
+left to right direction
+skinparam packageStyle rectangle
+
+title Диаграмма пользовательских сценариев: Expense Tracker (Keycloak + PostgreSQL)
+
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+' Админ включает возможности пользователя
+User <|-- Admin
+
+rectangle "Expense Tracker" {
+
+  ' Доступ
+  usecase "Войти в систему" as UC_Login
+  usecase "Выйти из системы" as UC_Logout
+
+  ' Расходы пользователя
+  usecase "Просмотреть расходы" as UC_ViewExpenses
+  usecase "Фильтровать расходы" as UC_FilterExpenses
+  usecase "Создать расход" as UC_CreateExpense
+  usecase "Редактировать расход" as UC_UpdateExpense
+  usecase "Удалить расход" as UC_DeleteExpense
+
+  ' Статистика
+  usecase "Просмотреть статистику" as UC_Stats
+
+  ' Администрирование
+  usecase "Просмотреть пользователей" as UC_AdminUsers
+  usecase "Изменить роль пользователя" as UC_ChangeRole
+  usecase "Просмотреть расходы пользователя" as UC_AdminViewExpenses
+  usecase "Просмотреть общую статистику" as UC_AdminStats
+}
+
+' Связи акторов с use-case
+User --> UC_Login
+User --> UC_Logout
+User --> UC_ViewExpenses
+User --> UC_CreateExpense
+User --> UC_UpdateExpense
+User --> UC_DeleteExpense
+User --> UC_Stats
+
+Admin --> UC_AdminUsers
+Admin --> UC_ChangeRole
+Admin --> UC_AdminViewExpenses
+Admin --> UC_AdminStats
+
+' Связи между use-case (верхний уровень)
+UC_ViewExpenses --> UC_FilterExpenses : <<include>>
+UC_Stats ..> UC_ViewExpenses : <<extend>>
+UC_AdminStats ..> UC_AdminViewExpenses : <<extend>>
+
+note right of UC_Login
+  Аутентификация выполняется через Keycloak.
+  Доступ к данным ограничен ролями:
+  - Пользователь: только свои расходы
+  - Администратор: доступ ко всем пользователям
+end note
+
+@enduml
