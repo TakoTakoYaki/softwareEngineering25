@@ -1,0 +1,39 @@
+@startuml Sequence_Вход_через_Keycloak
+title Сценарий: Пользователь входит в систему через Keycloak
+
+actor "Пользователь" as User
+participant "Веб-интерфейс" as UI
+participant "Backend" as API
+participant "Keycloak" as KC
+
+User -> UI: Открывает страницу входа (/login)
+activate UI
+
+UI -> API: GET /login
+activate API
+
+API -> KC: Redirect на страницу авторизации\n(client_id, redirect_uri)
+deactivate API
+
+KC --> User: Форма логина / SSO
+deactivate UI
+
+User -> KC: Ввод логина и пароля\n(или SSO)
+activate KC
+
+KC --> User: Redirect с кодом авторизации
+deactivate KC
+
+User -> API: GET /auth/callback (authorization code)
+activate API
+
+API -> KC: POST /token (обмен кода на токен)
+activate KC
+KC --> API: JWT access_token + refresh_token
+deactivate KC
+
+API --> User: Установка сессии / cookie\nRedirect на главную страницу
+deactivate API
+
+@enduml
+
