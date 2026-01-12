@@ -1,0 +1,57 @@
+@startuml UseCase_Пользователь
+left to right direction
+title Диаграмма пользовательских сценариев для актора "Пользователь"
+skinparam packageStyle rectangle
+
+actor "Пользователь" as User
+
+rectangle "Система учета расходов" {
+
+  rectangle "Доступ и сессия" {
+    usecase "UC-U-1: Войти в систему" as UC_U_Login
+    usecase "UC-U-2: Выйти из системы" as UC_U_Logout
+  }
+
+  rectangle "Управление расходами" {
+    usecase "UC-U-3: Просмотреть список расходов" as UC_U_List
+    usecase "UC-U-4: Фильтровать расходы" as UC_U_Filter
+    usecase "UC-U-5: Создать расход" as UC_U_Create
+    usecase "UC-U-6: Редактировать расход" as UC_U_Update
+    usecase "UC-U-7: Удалить расход" as UC_U_Delete
+  }
+
+  rectangle "Аналитика" {
+    usecase "UC-U-8: Просмотреть статистику" as UC_U_Stats
+  }
+
+  rectangle "Безопасность (сквозная)" {
+    usecase "UC-U-9: Проверка JWT и прав доступа" as UC_U_Auth
+  }
+}
+
+' Основные цели пользователя
+User --> UC_U_Login
+User --> UC_U_Logout
+User --> UC_U_List
+User --> UC_U_Create
+User --> UC_U_Update
+User --> UC_U_Delete
+User --> UC_U_Stats
+
+' Детализация / зависимости
+UC_U_List --> UC_U_Filter : <<include>>
+
+' Сквозная проверка доступа
+UC_U_List --> UC_U_Auth : <<include>>
+UC_U_Create --> UC_U_Auth : <<include>>
+UC_U_Update --> UC_U_Auth : <<include>>
+UC_U_Delete --> UC_U_Auth : <<include>>
+UC_U_Stats --> UC_U_Auth : <<include>>
+
+note right of UC_U_Auth
+  Backend проверяет JWT,
+  извлекает userId (sub) и роли,
+  ограничивает доступ только к своим данным.
+end note
+
+@enduml
