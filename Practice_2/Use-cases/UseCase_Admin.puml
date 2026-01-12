@@ -1,0 +1,61 @@
+@startuml UseCase_Администратор
+left to right direction
+title Диаграмма пользовательских сценариев для актора "Администратор"
+skinparam packageStyle rectangle
+
+actor "Администратор" as Admin
+
+rectangle "Система учета расходов" {
+
+  rectangle "Доступ и сессия" {
+    usecase "UC-A-1: Войти в систему" as UC_A_Login
+    usecase "UC-A-2: Выйти из системы" as UC_A_Logout
+  }
+
+  rectangle "Управление пользователями" {
+    usecase "UC-A-3: Просмотреть список пользователей" as UC_A_Users
+    usecase "UC-A-4: Просмотреть профиль пользователя" as UC_A_UserProfile
+    usecase "UC-A-5: Изменить роль пользователя" as UC_A_ChangeRole
+  }
+
+  rectangle "Контроль данных" {
+    usecase "UC-A-6: Просмотреть расходы пользователя" as UC_A_ViewUserExpenses
+    usecase "UC-A-7: Получить агрегированную статистику" as UC_A_GlobalStats
+  }
+
+  rectangle "Безопасность (сквозная)" {
+    usecase "UC-A-8: Проверка JWT и роли Admin" as UC_A_Auth
+  }
+}
+
+' Основные цели администратора
+Admin --> UC_A_Login
+Admin --> UC_A_Logout
+Admin --> UC_A_Users
+Admin --> UC_A_UserProfile
+Admin --> UC_A_ChangeRole
+Admin --> UC_A_ViewUserExpenses
+Admin --> UC_A_GlobalStats
+
+' Зависимости между сценариями
+UC_A_Users --> UC_A_UserProfile : <<extend>>
+UC_A_ViewUserExpenses ..> UC_A_UserProfile : <<extend>>
+
+' Сквозная проверка доступа
+UC_A_Users --> UC_A_Auth : <<include>>
+UC_A_UserProfile --> UC_A_Auth : <<include>>
+UC_A_ChangeRole --> UC_A_Auth : <<include>>
+UC_A_ViewUserExpenses --> UC_A_Auth : <<include>>
+UC_A_GlobalStats --> UC_A_Auth : <<include>>
+
+note right of UC_A_ChangeRole
+  Изменение ролей синхронизируется
+  с Keycloak.
+end note
+
+note right of UC_A_Auth
+  Требуется роль Admin.
+  Проверка выполняется на Backend.
+end note
+
+@enduml
