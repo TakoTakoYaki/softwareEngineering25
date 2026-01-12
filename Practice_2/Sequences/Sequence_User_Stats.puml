@@ -1,0 +1,47 @@
+@startuml Sequence_Просмотр_расходов_и_статистики
+
+title Сценарий: Пользователь просматривает расходы и статистику
+
+actor "Пользователь" as User
+participant "Веб-интерфейс" as UI
+participant "Backend" as API
+participant "Сервис авторизации" as Auth
+participant "Сервис расходов" as ExpenseService
+participant "Сервис статистики" as StatsService
+database "PostgreSQL" as DB
+participant "Keycloak" as KC
+
+User -> UI: Открывает страницу расходов
+activate UI
+
+UI -> API: GET /api/expenses (JWT)
+activate API
+
+API -> Auth: Проверка JWT
+activate Auth
+Auth -> KC: Проверка подписи токена
+KC --> Auth: OK
+deactivate Auth
+
+API -> ExpenseService: Получить расходы пользователя
+activate ExpenseService
+ExpenseService -> DB: SELECT расходы пользователя
+DB --> ExpenseService: Список расходов
+deactivate ExpenseService
+
+par Параллельно статистика
+API -> StatsService: Получить статистику за период
+activate StatsService
+StatsService -> DB: SELECT SUM(amount), COUNT(*)
+DB --> StatsService: Результат
+deactivate StatsService
+end
+
+API --> UI: Расходы + статистика
+deactivate API
+
+UI --> User: Отображение таблицы и графиков
+deactivate UI
+
+@enduml
+
