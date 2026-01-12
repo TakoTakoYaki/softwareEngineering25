@@ -1,0 +1,37 @@
+@startuml Sequence_Admin_Просмотр_пользователей
+
+title Сценарий: Администратор просматривает список пользователей
+
+actor "Администратор" as Admin
+participant "Веб-интерфейс" as UI
+participant "Backend" as API
+participant "Сервис авторизации" as Auth
+participant "Сервис пользователей" as UserService
+database "PostgreSQL" as DB
+participant "Keycloak" as KC
+
+Admin -> UI: Открывает страницу пользователей
+activate UI
+
+UI -> API: GET /api/users (JWT)
+activate API
+
+API -> Auth: Проверка JWT и роли Admin
+activate Auth
+Auth -> KC: Проверка токена и ролей
+KC --> Auth: role = Admin
+deactivate Auth
+
+API -> UserService: Получить список пользователей
+activate UserService
+UserService -> DB: SELECT * FROM users
+DB --> UserService: Список пользователей
+deactivate UserService
+
+API --> UI: Список пользователей
+deactivate API
+
+UI --> Admin: Отображение таблицы пользователей
+deactivate UI
+
+@enduml
